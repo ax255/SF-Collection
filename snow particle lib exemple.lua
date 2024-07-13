@@ -11,8 +11,6 @@ if CLIENT then
     ham:setWindSpeedSpread(-1,1)
     ham:debugInfo(false)
     ham:setTPS(60)
-    
-    ham.debug = true
 
     local FPS = 60
     local next_frame = 0
