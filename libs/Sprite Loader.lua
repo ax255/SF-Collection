@@ -78,7 +78,7 @@ if CLIENT then
     
     hook.add("tick", "processSprite", function()
         
-        if timer.curtime() - spriteWaitlist.lastTime > 0.1 and not spriteWaitlist.processing then
+        if timer.curtime() - spriteWaitlist.lastTime > 0.1 and not spriteWaitlist.processing then -- and player():getPos():getDistance(chip():getPos()) < 500 then
             
             local sprite = spriteWaitlist.sprites[1]
             
@@ -119,7 +119,9 @@ if CLIENT then
         spriteMat:setInt("$flags", 256)
         spriteMat:setTextureURL("$basetexture", url, function(mtl, url, w, h, layout )
             
-            layout(0, 0, 1024, 1024)
+            if layout then
+                layout(0, 0, 1024, 1024)
+            end
             
         end, function(mat, url)
             
@@ -162,22 +164,28 @@ if CLIENT then
         
     end
     
-    function drawSprite(name, x, y, w, h)
+    function drawSprite(name, x, y, w, h, showProgress)
         
         local sprite = sprites[name]
         
         if not sprite then 
             
-            render.setFont(render.getDefaultFont())
-            render.setColor(Color(255, 255, 255, 255))
-            render.drawText(x + w / 2, y + h / 2, "loading/not found", 1)
-            render.drawText(x + w / 2, ( y + h / 2 ) + 15, "left: " .. #spriteWaitlist.sprites, 1)
+            if showProgress then
+                
+                render.setFont(render.getDefaultFont())
+                render.setColor(Color(255, 255, 255, 255))
+                render.drawText(x + w / 2, y + h / 2, "loading/not found", 1)
+                render.drawText(x + w / 2, ( y + h / 2 ) + 15, "left: " .. #spriteWaitlist.sprites, 1)
+                
+            end
             
-            return 
+            return nil
         end
         
         render.setRenderTargetTexture( "sprites" .. sprite.rt )
         render.drawTexturedRectUV( x, y, w, h, getUV( sprite.x, sprite.y ) )
+        
+        return true
         
     end
     
