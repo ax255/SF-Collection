@@ -1,9 +1,9 @@
 --@name sprite exemple
 --@author Ax25 :3
 --@shared
---@include libs/sprite_loader.txt
+--@include https://raw.githubusercontent.com/ax255/SF-Collection/main/libs/Sprite%20Loader.lua as sprite_loader.lua
 
-dofile("libs/sprite_loader.txt")
+dofile("sprite_loader.lua")
 
 if CLIENT then
     
@@ -60,9 +60,9 @@ if CLIENT then
 
         render.setColor(Color(255, 255, 255, 255))
         --drawSprite("yippiee", 0, 0, 256, 256)
-        drawSprite("prowler07", 256, 0, 256, 256)
-        drawSprite("TBHCreatura", 0, 256, 256, 256)
-        drawSprite("swagin", 256, 256, 256, 256)
+        drawSprite("prowler07", 256, 0, 256, 256, true)
+        drawSprite("TBHCreatura", 0, 256, 256, 256, true)
+        drawSprite("swagin", 256, 256, 256, 256, true)
 
         local numRows = math.ceil(math.sqrt(spritertIndex))
         local squareSize = 256 / numRows
