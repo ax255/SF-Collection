@@ -106,7 +106,7 @@ if CLIENT then
                     end
                 end)
                 
-                if syncTime then
+                if syncTime and radiom.betterTimeSync then
                     timer.simple(0.7, function() -- stoopid timer because bass wont let me settime it 
                         
                         if not radiom:bassValid() then return end
@@ -335,17 +335,6 @@ if CLIENT then
         end
 
     end
-    
-    -- testing do not include in final lib -------
-    
-    --radiom:fetchPlaylist("https://raw.githubusercontent.com/ax255/public-stuff/main/muisiclistRev.json")
-    --radiom:fetchPlaylist("https://cdn.discordapp.com/attachments/1138606055333564456/1247657523419545651/output.json?ex=6660d31d&is=665f819d&hm=f61053b2d568d43f7f4e943122f8283e64c5ce60b89fc6b53720168fc6c76724&")
-
-    timer.simple(30, function()
-        --radiom.__debugPrint(radiom.time)
-    end)
-
-    -----------------------------------------------
 
 end
 
@@ -360,14 +349,31 @@ if SERVER then
     radiom.handleNet = {}
     
     function radiom.__sendNet(id, data, players)
-        for k,ply in pairs(players) do
-            if type(ply) == "Player" and ply:isValid() then
-                net.start("radiomNet")
-                net.writeString(id)
-                net.writeTable(data)
-                net.send(ply)
+
+        local dataLength = #bit.tableToString(data)*8
+
+        if net.getBitsLeft() < dataLength*1.5 then -- net queue is planned but for now this will do it rather than erroring the chip
+            radiom.__debugPrint( "Skipping net message!", true)
+            --radiom.__debugPrint( table.toString(players) .. " [" .. id .. "] " .. net.getBitsLeft() .. " / " .. dataLength, true )
+            radiom.__debugPrint( "[" .. id .. "] " .. net.getBitsLeft() .. " / " .. dataLength, true )
+            radiom.__debugPrint( "clients may desync because of this!", true )
+            radiom.__debugPrint( "Possible reason for this is others starfall chips sending a lot of net data.", true )
+            return
+        end
+        
+        players = table.clearKeys(players)
+        
+        for k,ply in ipairs(players) do
+            if (not ply:isValid() ) or ( not ply:isPlayer() ) then
+                table.remove(players, k)
             end
         end
+        
+        net.start("radiomNet")
+        net.writeString(id)
+        net.writeTable(data)
+        net.send(players)
+
     end
     
     function radiom.__newInitSync(ply)
@@ -425,7 +431,13 @@ if SERVER then
     end
     
     radiom.handleNet["debugPrint"] = function(data, ply)
-        printConsole("[cl] " .. ply:getName() .. " " .. data[1])
+        
+        if data[2] then
+            print("[cl] " .. ply:getName() .. " " .. data[1]) 
+        else
+            printConsole("[cl] " .. ply:getName() .. " " .. data[1]) 
+        end
+
     end
     
     radiom.handleNet["ownerSync"] = function(data, ply)
@@ -486,11 +498,7 @@ if SERVER then
         end)
         
     end
-    
-    hook.add("radiomReady", "start", function()
-        --radiom:start()
-    end)
-    
+
     ----------------------------------------------
 
 end
@@ -559,12 +567,16 @@ end
 
 -- DEBUG PRINT --------------------
 
-function radiom.__debugPrint(str)
-    if not radiom.debugMode then return end
+function radiom.__debugPrint(str, forceprint)
+    if not radiom.debugMode and not forceprint then return end
     if CLIENT then
-        radiom.__sendNet( "debugPrint", { str } )
+        radiom.__sendNet( "debugPrint", { str, forceprint } )
     else
-       printConsole("[sv] " .. str) 
+        if forceprint then
+            print("[sv] " .. str) 
+        else
+            printConsole("[sv] " .. str) 
+        end
     end
 end
 
