@@ -86,7 +86,7 @@ if CLIENT then
                 radiom.currentMusic = url
                 radiom.musicName = radiom:sanitizeURL(url)
                 
-                if inProgress then
+                if inProgress then -- really need to find a way to make bass correctly set time, for some reason some client dosn't want to settime this little time after the bass loaded
                     timer.simple(0.6, function() -- stoopid timer because bass wont let me settime it 
                         
                         if not radiom:bassValid() then return end
@@ -96,15 +96,11 @@ if CLIENT then
                         timer.adjust("radiom_nextsong", radiom.length - radiom.time, 1, radiom.__decideNextSong)
                         
                         radiom.__debugPrint(radiom.bass:getTime())
+                        if radiom.bass:getTime() ~= inProgress then
+                            radiom.__debugPrint(inProgress .. " didn't work ?")
+                        end
                     end)
                 end
-                
-                hook.add("think", "radiomBassPos", function()
-                    if radiom.bass:isValid() then
-                        radiom.bass:setPos(radiom.followEnt:getPos())
-                        radiom.time = radiom.bass:getTime() 
-                    end
-                end)
                 
                 if syncTime and radiom.betterTimeSync then
                     timer.simple(0.7, function() -- stoopid timer because bass wont let me settime it 
@@ -120,6 +116,13 @@ if CLIENT then
                         
                     end)
                 end
+                
+                hook.add("think", "radiomBassPos", function()
+                    if radiom.bass:isValid() then
+                        radiom.bass:setPos(radiom.followEnt:getPos())
+                        radiom.time = radiom.bass:getTime() 
+                    end
+                end)
                 
                 if radiom.debugMode then
                    radiom.__debugPrint("is playing: " .. radiom.currentMusic) 
@@ -156,6 +159,10 @@ if CLIENT then
         else
             return false
         end
+    end
+    
+    function radiom:requestSync()
+        radiom.__sendNet("requestSync", {})
     end
     
     radiom.handleNet["playShuffle"] = function(data)
@@ -288,7 +295,13 @@ if CLIENT then
             })
         
         end) 
-    end 
+    end
+    
+    timer.create("radiomBassCheck", 3, 0, function() -- incase something stop the bass sound while it shouldn't
+        if radiom.playing and not radiom.bass:isPlaying() then
+            radiom:requestSync()
+        end
+    end)
     
     net.receive("radiomNet", function()
         local id = net.readString() 
@@ -446,6 +459,13 @@ if SERVER then
         --radiom.ownerSyncData[9] = radiom.ownerSyncData[9] + 1.5
     end
     
+    radiom.handleNet["requestSync"] = function(data, ply)
+        if ply:isValid() then
+            radiom:sync(ply)
+            radiom.__debugPrint( ply:getName() .. " requested to be synced" )
+        end
+    end
+    
     net.receive("radiomNet", function(_,ply)
         local id = net.readString()
         local data = net.readTable()
@@ -463,6 +483,18 @@ if SERVER then
                 hook.run("radiomReady")
             end)
         end
+    end)
+    
+    hook.add("PlayerDisconnect", "sfasp_playerdisconnect", function( networkid, name, player, reason )
+        
+        if not player:isValid() then
+            return
+        end
+        
+        if radiom.initedPlayers[player:getUserID()] then
+           radiom.initedPlayers[player:getUserID()] = nil
+        end
+        
     end)
     
     -- debug code ---------------------------------
