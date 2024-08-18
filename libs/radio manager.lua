@@ -298,7 +298,7 @@ if CLIENT then
     end
     
     timer.create("radiomBassCheck", 3, 0, function() -- incase something stop the bass sound while it shouldn't
-        if radiom.playing and not radiom.bass:isPlaying() then
+        if radiom.playing and ( not radiom:bassValid() or not radiom.bass:isPlaying() ) then
             radiom:requestSync()
         end
     end)
