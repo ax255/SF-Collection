@@ -70,6 +70,10 @@ if CLIENT then
                 
                 timer.remove("radiom_nextsong")
                 
+                if radiom.bass and radiom.bass:isValid() then
+                    radiom.bass:stop() 
+                end
+                
                 radiom.bass = snd 
                 
                 if radiom.muted then
@@ -166,11 +170,14 @@ if CLIENT then
     end
     
     radiom.handleNet["playShuffle"] = function(data)
+        radiom.playing = false
         radiom:play(data[1], nil, data[3])
         radiom.playlistIndex = data[2]
     end
     
     radiom.handleNet["syncToOwner"] = function(data)
+        
+        radiom.playing = false
         
         radiom.__debugPrint("i sync")
         
@@ -219,6 +226,7 @@ if CLIENT then
     radiom.handleNet["playIndex"] = function(data)
         
         if radiom.playlist[data[1]] then
+            radiom.playing = false
             radiom.playlistIndex = data[1]
             radiom:play(radiom.playlist[data[1]], nil, data[2])
         end
