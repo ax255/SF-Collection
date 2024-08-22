@@ -13,6 +13,7 @@ if CLIENT then
     spriteWaitlist.sprites = {}
     spriteWaitlist.lastTime = timer.curtime()
     spriteWaitlist.processing = false
+    spriteWaitlist.lookup = {}
 
     local HorizontalFrames = 1024 / spriteRes
     local VerticalFrames = 1024 / spriteRes
@@ -68,11 +69,12 @@ if CLIENT then
 
     newRT( spritertIndex )
     
-    function addSprite(name, url)
+    function addSprite(name, path)
         
-        if sprites[name] then return end
-        
-        table.insert( spriteWaitlist.sprites, { name, url } )
+        if sprites[name] or spriteWaitlist.lookup[name] then return end
+
+        spriteWaitlist.lookup[name] = path
+        table.insert( spriteWaitlist.sprites, { name, path } )
 
     end
     
@@ -88,15 +90,16 @@ if CLIENT then
                 spriteWaitlist.processing = true
                 
                 table.remove(spriteWaitlist.sprites, 1)
+                spriteWaitlist.lookup[sprite[1]] = nil
                 spriteWaitlist.lastTime = timer.curtime()
-                
+
             end
             
         end
         
     end)
     
-    function processSprite(name, url)
+    function processSprite(name, path)
 
         if nextSprite.x > HorizontalFrames-1 then
             
@@ -110,46 +113,79 @@ if CLIENT then
         end
         
         sprites[name] = {}
-        sprites[name].url = url
+        sprites[name].path = path
         sprites[name].x = nextSprite.x
         sprites[name].y = nextSprite.y
         sprites[name].rt = spritertIndex
 
-        local spriteMat = material.create("UnlitGeneric")
-        spriteMat:setInt("$flags", 256)
-        spriteMat:setTextureURL("$basetexture", url, function(mtl, url, w, h, layout )
+        if string.find(path, "icon16") then
             
-            if layout then
-                layout(0, 0, 1024, 1024)
-            end
-            
-        end, function(mat, url)
-            
+            local mat = material.createFromImage(path, "")
+
             hook.add("renderoffscreen", "drawEmojiRT", function()
                 
                 render.selectRenderTarget( "sprites" .. spritertIndex )
                 
                 render.setFilterMag(1)
                 render.setFilterMin(1)
-                
-                --render.setColor(Color(0, 0, 0, 255))
-                --render.drawRect( 1024 / HorizontalFrames * sprites[name].x, 1024 / VerticalFrames * sprites[name].y, spriteRes, spriteRes )
-    
+
                 render.setColor(Color(255, 255, 255, 255))
                 
-                render.setMaterial(spriteMat)
+                render.setMaterial(mat)
                 render.drawTexturedRect( 1024 / HorizontalFrames * sprites[name].x, 1024 / VerticalFrames * sprites[name].y, spriteRes, spriteRes )
 
-                render.destroyRenderTarget( spriteMat:getName() .. "$basetexture" )
-                render.destroyTexture(spriteMat)
-                
-                spriteWaitlist.processing = false
-    
-                hook.remove("renderoffscreen", "drawEmojiRT")
+                timer.simple(0, function()
+                    
+                    render.destroyTexture(mat)
+                    
+                    spriteWaitlist.processing = false
+                    
+                    hook.remove("renderoffscreen", "drawEmojiRT")
+                    
+                end)
                 
             end)
             
-        end)
+        else
+            
+            --local spriteMat = material.create("UnlitGeneric")
+            --spriteMat:setInt("$flags", 256)
+            --spriteMat:setTextureURL("$basetexture", path, function(mtl, path, w, h, layout )
+            local spriteMat = render.createMaterial(path, function(mtl, path, w, h, layout )
+                
+                if layout then
+                    layout(0, 0, 1024, 1024)
+                end
+                
+            end, function(mat, path)
+                
+                hook.add("renderoffscreen", "drawEmojiRT", function()
+                    
+                    render.selectRenderTarget( "sprites" .. spritertIndex )
+                    
+                    render.setFilterMag(1)
+                    render.setFilterMin(1)
+                    
+                    --render.setColor(Color(0, 0, 0, 255))
+                    --render.drawRect( 1024 / HorizontalFrames * sprites[name].x, 1024 / VerticalFrames * sprites[name].y, spriteRes, spriteRes )
+        
+                    render.setColor(Color(255, 255, 255, 255))
+                    
+                    render.setMaterial(mat)
+                    render.drawTexturedRect( 1024 / HorizontalFrames * sprites[name].x, 1024 / VerticalFrames * sprites[name].y, spriteRes, spriteRes )
+    
+                    render.destroyRenderTarget( mat:getName() .. "$basetexture" )
+                    render.destroyTexture(mat)
+                    
+                    spriteWaitlist.processing = false
+        
+                    hook.remove("renderoffscreen", "drawEmojiRT")
+                    
+                end)
+                
+            end)
+            
+        end
         
         if nextSprite.y + 1 > VerticalFrames-1 then
             
