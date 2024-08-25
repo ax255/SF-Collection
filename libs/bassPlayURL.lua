@@ -3,6 +3,57 @@
 --@client
 
 local Sounds = {}
+bassMode = bass.loadURL
+
+function bassHandle(snd,_,err)
+    if snd then
+
+        if Sounds[id] then
+            if isValid(Sounds[id]) then
+                Sounds[id]:stop()
+            end 
+            Sounds[id] = nil
+        end
+        
+        Sounds[id] = snd
+        Sounds[id]:setVolume(volume)
+        Sounds[id]:setFade(fademin, fademax)
+
+        if type(pos) == "Player" or type(pos) == "Entity" or type(pos) == "Hologram" then
+            Sounds[id].Dpos = pos
+            hook.add("think", "soundPos_"..id, function()
+                Sounds[id]:setPos(Sounds[id].Dpos:getPos())
+            end)
+        else
+            Sounds[id]:setPos(pos)
+        end
+
+        Sounds[id]:play()
+        Sounds[id]:setPitch(pitch)
+
+        if loop then
+            Sounds[id]:setLooping(true)
+        else
+            timer.simple(Sounds[id]:getLength(), function()
+                if Sounds[id] then
+                    Sounds[id]:stop()
+                    Sounds[id] = nil
+                    hook.remove("think", "soundPos_"..id)
+                end
+            end)
+        end
+
+    else
+        
+        if err then
+            print(err)
+            throw(err .. " " .. url)
+            return
+        end 
+        
+    end 
+end
+
 function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
 
     if bass.soundsLeft() < 2 then return end
@@ -14,10 +65,9 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
     fademax = fademax or 2000
     volume = volume or 1
     
-    bass.loadURL(url, "3d noplay noblock", function(snd,_,err)
-                
+    local function bassHandle(snd,_,err)
         if snd then
-
+    
             if Sounds[id] then
                 if isValid(Sounds[id]) then
                     Sounds[id]:stop()
@@ -28,7 +78,7 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
             Sounds[id] = snd
             Sounds[id]:setVolume(volume)
             Sounds[id]:setFade(fademin, fademax)
-
+    
             if type(pos) == "Player" or type(pos) == "Entity" or type(pos) == "Hologram" then
                 Sounds[id].Dpos = pos
                 hook.add("think", "soundPos_"..id, function()
@@ -37,10 +87,10 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
             else
                 Sounds[id]:setPos(pos)
             end
-
+    
             Sounds[id]:play()
             Sounds[id]:setPitch(pitch)
-
+    
             if loop then
                 Sounds[id]:setLooping(true)
             else
@@ -52,7 +102,7 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
                     end
                 end)
             end
-
+    
         else
             
             if err then
@@ -61,8 +111,9 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
                 return
             end 
             
-        end
+        end 
+    end
     
-    end)
+    bassMode(url, "3d noplay noblock", bassHandle)
 
 end
