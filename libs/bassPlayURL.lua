@@ -5,56 +5,7 @@
 local Sounds = {}
 bassMode = bass.loadURL
 
-function bassHandle(snd,_,err)
-    if snd then
-
-        if Sounds[id] then
-            if isValid(Sounds[id]) then
-                Sounds[id]:stop()
-            end 
-            Sounds[id] = nil
-        end
-        
-        Sounds[id] = snd
-        Sounds[id]:setVolume(volume)
-        Sounds[id]:setFade(fademin, fademax)
-
-        if type(pos) == "Player" or type(pos) == "Entity" or type(pos) == "Hologram" then
-            Sounds[id].Dpos = pos
-            hook.add("think", "soundPos_"..id, function()
-                Sounds[id]:setPos(Sounds[id].Dpos:getPos())
-            end)
-        else
-            Sounds[id]:setPos(pos)
-        end
-
-        Sounds[id]:play()
-        Sounds[id]:setPitch(pitch)
-
-        if loop then
-            Sounds[id]:setLooping(true)
-        else
-            timer.simple(Sounds[id]:getLength(), function()
-                if Sounds[id] then
-                    Sounds[id]:stop()
-                    Sounds[id] = nil
-                    hook.remove("think", "soundPos_"..id)
-                end
-            end)
-        end
-
-    else
-        
-        if err then
-            print(err)
-            throw(err .. " " .. url)
-            return
-        end 
-        
-    end 
-end
-
-function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
+function playSound(url, pos, volume, loop, id, fademin, fademax, pitch, callback)
 
     if bass.soundsLeft() < 2 then return end
 
@@ -66,6 +17,7 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
     volume = volume or 1
     
     local function bassHandle(snd,_,err)
+        
         if snd then
     
             if Sounds[id] then
@@ -102,6 +54,10 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
                     end
                 end)
             end
+            
+            if callback then
+                callback()
+            end
     
         else
             
@@ -112,6 +68,7 @@ function playSound(url, pos, volume, loop, id, fademin, fademax, pitch)
             end 
             
         end 
+
     end
     
     bassMode(url, "3d noplay noblock", bassHandle)
