@@ -4,7 +4,7 @@
 
 if CLIENT then
 
-    local playersStatus = {}
+    playersStatus = {}
     local status = game.hasFocus()
     local lastStatus = status
     local focus = game.hasFocus()
@@ -30,7 +30,7 @@ if CLIENT then
 
         focus = game.hasFocus()
 
-        if timer.curtime() - lastInputTime > 20 then
+        if timer.curtime() - lastInputTime > 15 then
             inputAFK = true
         else
             inputAFK = false
@@ -129,6 +129,7 @@ else
             createPlyTable(ply)
         end
         playersStatus[ply:getUserID()].status = net.readBool()
+        playersStatus[ply:getUserID()].afksince = timer.curtime()
         playersStatus[ply:getUserID()].lastPing = timer.curtime()
         --print(ply,playersStatus[ply:getUserID()].status)
     end)
@@ -167,14 +168,15 @@ else
 
             if timer.curtime() - playersStatus[ply:getUserID()].lastPing > 6 then
 
-                if timer.curtime() - playersStatus[ply:getUserID()].lastSvInput > 20 then
+                if timer.curtime() - playersStatus[ply:getUserID()].lastSvInput > 15 then
                     playersStatus[ply:getUserID()].status = false
+                    playersStatus[ply:getUserID()].afksince = timer.curtime()
                 else
                     playersStatus[ply:getUserID()].status = true
                 end
 
             end
-
+            
         end
     end)
 
