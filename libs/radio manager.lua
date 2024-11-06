@@ -564,31 +564,44 @@ end
 
 -- FETCH PLAYLIST --------------
 
-function radiom:fetchPlaylist(url)
-    
+function radiom:fetchPlaylist(url, add)
     if type(url) == "string" then
         http.get( url, function( Body, Length, Headers, Code )
-    
             if isnumber( Code ) and Code != 200 then error( "Error code "..Code ) end
-            radiom.playlist = json.decode(Body)
+            
+            if add then
+                for i, url in ipairs(json.decode(Body)) do
+                    table.insert(radiom.playlist, url) 
+                end
+            else
+                radiom.playlist = json.decode(Body)
+            end
+
             print("Loaded " .. #radiom.playlist .. " songs")
     
             for k,url in ipairs(radiom.playlist) do
-                radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
+                if not radiom.cleanedPlaylist[k] then
+                    radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
+                end
             end
-    
         end)
     elseif type(url) == "table" then
-        
-        radiom.playlist = url
+        if add then
+            for i, url in ipairs(url) do
+                table.insert(radiom.playlist, url) 
+            end
+        else
+            radiom.playlist = url
+        end
+
         print("Loaded " .. #radiom.playlist .. " songs")
 
-        for k,url in ipairs(radiom.playlist) do
-            radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
+        for k, url in ipairs(radiom.playlist) do
+            if not radiom.cleanedPlaylist[k] then
+                radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
+            end
         end
-    
     end
-    
 end
 
 -- SEARCH MUSIC IN PLAYLIST -----------
