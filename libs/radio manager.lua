@@ -308,6 +308,10 @@ if CLIENT then
     timer.create("radiomBassCheck", 3, 0, function() -- incase something stop the bass sound while it shouldn't
         if radiom.playing and ( not radiom:bassValid() or not radiom.bass:isPlaying() ) and timer.exists("radiom_nextsong") and timer.timeleft("radiom_nextsong") > 1 then
             radiom:requestSync()
+            timer.pause("radiomBassCheck")
+            timer.simple(5, function()
+                timer.start("radiomBassCheck")
+            end)
         end
     end)
     
@@ -563,9 +567,16 @@ function radiom:sanitizeURL(url)
 end
 
 -- FETCH PLAYLIST --------------
+local fetchQueue = {}
+local fetching = false
 
 function radiom:fetchPlaylist(url, add)
     if type(url) == "string" then
+        if fetching then
+            table.insert(fetchQueue, {url, add})
+            return
+        end
+        fetching = true
         http.get( url, function( Body, Length, Headers, Code )
             if isnumber( Code ) and Code != 200 then error( "Error code "..Code ) end
             
@@ -583,6 +594,11 @@ function radiom:fetchPlaylist(url, add)
                 if not radiom.cleanedPlaylist[k] then
                     radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
                 end
+            end
+            fetching = false
+            if fetchQueue[1] then
+                radiom:fetchPlaylist(fetchQueue[1][1], fetchQueue[1][2])
+                table.remove(fetchQueue, 1)
             end
         end)
     elseif type(url) == "table" then
