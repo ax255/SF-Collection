@@ -24,22 +24,28 @@ if SERVER then
     
     local Entity = getMethods("Entity")
 
-    function Entity:useChair(succes, fail)
+    function Entity:useChair(succes, fail, noeject)
         
         if not self:isValid() or not self:isVehicle() or self.inUse then return end
         self.oldPos = self:getPos()
         self.inUse = true
-        self:setPos(owner():getEyePos()+Vector(0,0,-5))
+        
+        hook.add("tick", "chairTp", function()
+            self:setPos(owner():getEyePos()+Vector(0,0,-5))
+        end)
         
         net.start("sv_useChair")
         net.send(owner())
         
         hook.add("PlayerEnteredVehicle", "useChair", function(ply, vehicle)
-            if ply == owner() and vehicle ==  self and self:isValid() then
+            if ply == owner() and vehicle == self and self:isValid() then
                 hook.remove("PlayerEnteredVehicle", "useChair")
+                hook.remove("tick", "chairTp")
                 timer.remove("chairTimeout")
                 self:setPos(self.oldPos)
-                self:ejectDriver()
+                if not noeject then
+                    self:ejectDriver()
+                end
                 self.inUse = false
                 if succes then
                    succes() 
@@ -50,6 +56,7 @@ if SERVER then
         timer.create("chairTimeout", 1, 1, function()
             if self.inUse and self:isValid() then
                 hook.remove("PlayerEnteredVehicle", "useChair")
+                hook.remove("tick", "chairTp")
                 self:setPos(self.oldPos)
                 self.inUse = false
                 if fail then
