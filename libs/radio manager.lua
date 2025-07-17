@@ -31,6 +31,7 @@ if CLIENT then
     radiom.time = 0
     
     radiom.followEnt = chip()
+    radiom.followOffset = Vector()
     radiom.handleNet = {}
     
     function radiom:play(url, inProgress, syncTime)
@@ -82,9 +83,6 @@ if CLIENT then
                     radiom.bass:setVolume(radiom.volume)
                 end
                 radiom.bass:setFade(radiom.fademin, radiom.fademax)
-                radiom.bass:play()
-
-                radiom.playing = true
                 
                 radiom.length = radiom.bass:getLength()
                 radiom.currentMusic = url
@@ -123,7 +121,7 @@ if CLIENT then
                 
                 hook.add("think", "radiomBassPos", function()
                     if radiom.bass:isValid() then
-                        radiom.bass:setPos(radiom.followEnt:getPos())
+                        radiom.bass:setPos(radiom.followEnt:getPos() + radiom.followOffset)
                         radiom.time = radiom.bass:getTime() 
                     end
                 end)
@@ -131,6 +129,9 @@ if CLIENT then
                 if radiom.debugMode then
                    radiom.__debugPrint("is playing: " .. radiom.currentMusic) 
                 end
+                
+                radiom.bass:play()
+                radiom.playing = true
     
                 timer.create("radiom_nextsong", radiom.length, 1, radiom.__decideNextSong ) 
                 
@@ -424,6 +425,7 @@ if SERVER then
     end
     
     function radiom:addSong(url)
+        url = radiom:revoltCDNCheck(url)
         radiom.__sendNet( "newSong", { url }, radiom.initedPlayers )
     end
     
@@ -566,11 +568,17 @@ function radiom:sanitizeURL(url)
 ]]
 end
 
+function radiom:revoltCDNCheck(url) -- Hack until sf got the new domain proprely whitelisted
+    return string.replace(url, "cdn.revoltusercontent.com", "autumn.revolt.chat")
+end
+
 -- FETCH PLAYLIST --------------
 local fetchQueue = {}
 local fetching = false
 
 function radiom:fetchPlaylist(url, add)
+    url = radiom:revoltCDNCheck(url)
+
     if type(url) == "string" then
         if fetching then
             table.insert(fetchQueue, {url, add})
@@ -579,13 +587,18 @@ function radiom:fetchPlaylist(url, add)
         fetching = true
         http.get( url, function( Body, Length, Headers, Code )
             if isnumber( Code ) and Code != 200 then error( "Error code "..Code ) end
+            local jsonUrls = json.decode(Body)
+            
+            for i, urlCheck in ipairs(jsonUrls) do
+                jsonUrls[i] = radiom:revoltCDNCheck(urlCheck)
+            end
             
             if add then
-                for i, url in ipairs(json.decode(Body)) do
+                for i, url in ipairs(jsonUrls) do
                     table.insert(radiom.playlist, url) 
                 end
             else
-                radiom.playlist = json.decode(Body)
+                radiom.playlist = jsonUrls
             end
 
             print("Loaded " .. #radiom.playlist .. " songs")
