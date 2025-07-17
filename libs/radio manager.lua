@@ -558,6 +558,7 @@ function radiom:sanitizeURL(url)
     
     local last = string.find(url, "/[^/]*$")
     local filename = string.stripExtension(string.sub(http.urlDecode(url), last + 1))
+    filename = string.replace(filename, "_", " ")
     return filename
 --[[
     local result = "ERROR (Regex too long)"
