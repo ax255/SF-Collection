@@ -69,12 +69,12 @@ if CLIENT then
 
     newRT( spritertIndex )
     
-    function addSprite(name, path)
+    function addSprite(name, path, keepRatio)
         
         if sprites[name] or spriteWaitlist.lookup[name] then return end
 
         spriteWaitlist.lookup[name] = path
-        table.insert( spriteWaitlist.sprites, { name, path } )
+        table.insert( spriteWaitlist.sprites, { name, path, keepRatio } )
 
     end
     
@@ -86,7 +86,7 @@ if CLIENT then
             
             if sprite then
     
-                processSprite( sprite[1], sprite[2] )
+                processSprite( sprite[1], sprite[2], sprite[3] )
                 spriteWaitlist.processing = true
                 
                 table.remove(spriteWaitlist.sprites, 1)
@@ -99,7 +99,7 @@ if CLIENT then
         
     end)
     
-    function processSprite(name, path)
+    function processSprite(name, path, keepRatio)
 
         if nextSprite.x > HorizontalFrames-1 then
             
@@ -152,9 +152,22 @@ if CLIENT then
             --spriteMat:setInt("$flags", 256)
             --spriteMat:setTextureURL("$basetexture", path, function(mtl, path, w, h, layout )
             local spriteMat = render.createMaterial(path, function(mtl, path, w, h, layout )
-                
+                local width, height = 1024, 1024
+
+                if keepRatio then
+                    local scale
+                    if w > h then
+                        scale = width / w
+                    else
+                        scale = height / h
+                    end
+            
+                    width = w * scale
+                    height = h * scale
+                end
+
                 if layout then
-                    layout(0, 0, 1024, 1024)
+                    layout(0, 0, width, height)
                 end
                 
             end, function(mat, path)
