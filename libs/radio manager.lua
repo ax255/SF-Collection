@@ -578,9 +578,9 @@ local fetchQueue = {}
 local fetching = false
 
 function radiom:fetchPlaylist(url, add)
-    url = radiom:revoltCDNCheck(url)
-
     if type(url) == "string" then
+        url = radiom:revoltCDNCheck(url)
+        
         if fetching then
             table.insert(fetchQueue, {url, add})
             return
