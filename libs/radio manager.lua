@@ -714,7 +714,7 @@ end
 
 function radiom:setFadeMax(num)
     if SERVER then
-        radiom.__sendNet( "setFadeMin", { num }, radiom.initedPlayers )
+        radiom.__sendNet( "setFadeMax", { num }, radiom.initedPlayers )
     else
         radiom.fademax = num
         if radiom:bassValid() then
@@ -724,7 +724,7 @@ function radiom:setFadeMax(num)
 end
 
 if CLIENT then
-    radiom.handleNet["setFadeMin"] = function(data)
+    radiom.handleNet["setFadeMax"] = function(data)
         radiom:setFadeMax(data[1])
     end
 end
@@ -733,7 +733,7 @@ end
 
 function radiom:setFadeMin(num)
     if SERVER then
-        radiom.__sendNet( "setFadeMinMax", { num }, radiom.initedPlayers )
+        radiom.__sendNet( "setFadeMin", { num }, radiom.initedPlayers )
     else
         radiom.fademin = num
         if radiom:bassValid() then
@@ -743,7 +743,7 @@ function radiom:setFadeMin(num)
 end
 
 if CLIENT then
-    radiom.handleNet["setFadeMinMax"] = function(data)
+    radiom.handleNet["setFadeMin"] = function(data)
         radiom:setFadeMin(data[1])
     end
 end
