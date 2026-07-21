@@ -570,7 +570,8 @@ function radiom:sanitizeURL(url)
 end
 
 function radiom:revoltCDNCheck(url) -- Hack until sf got the new domain proprely whitelisted
-    return string.replace(url, "cdn.revoltusercontent.com", "autumn.revolt.chat")
+    local str = string.replace(url, "autumn.revolt.chat", "cdn.stoatusercontent.com")
+    return string.replace(str, "cdn.revoltusercontent.com", "cdn.stoatusercontent.com")
 end
 
 -- FETCH PLAYLIST --------------
