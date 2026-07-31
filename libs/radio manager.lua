@@ -628,6 +628,8 @@ function radiom:fetchPlaylist(url, add)
         print("Loaded " .. #radiom.playlist .. " songs")
 
         for k, url in ipairs(radiom.playlist) do
+            radiom.playlist[k] = radiom:revoltCDNCheck(url)
+            
             if not radiom.cleanedPlaylist[k] then
                 radiom.cleanedPlaylist[k] = radiom:sanitizeURL(url)
             end
